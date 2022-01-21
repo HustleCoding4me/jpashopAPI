@@ -4,11 +4,12 @@
 
 #### @PersistenceContext
 
-```java
- /*이 어노테이션이 있으면 EntityManager가 주입된다.
+이 어노테이션이 있으면 EntityManager가 주입된다.
       build.gradle의 jpa보고 yml 파일 읽어서 설정된 대로 만들어서 DI 해줌.
       EntityManger 객체는 JPA에서 CRUD를 호출하는 기능
-     */
+     
+
+```java
    @Repository
 public class MemberRepository {
 
