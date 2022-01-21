@@ -54,6 +54,29 @@ public class MemberRepositoryTest {
 ```
 
 
+### logging
+
+-기본적으로 hibernate의 type을 trace로 설정해준다.
+
+```yml
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.type: trace //trace 추가해줌
+
+```
+-p6spy(외부 라이브러리)
+ 작동 순서
+ 
+      1.DataSource를 래핑하여 프록시를 만듭니다.
+      
+      2.쿼리가 발생하여 JDBC가 ResultSet 을 반환하면 이를 만들어둔 프록시가 가로챕니다.
+      
+      3.내부적으로 ResultSet의 정보를 분석하고 p6spy의 옵션을 적용합니다.
+      
+      4.Slf4j 를 사용해 로깅합니다.
+      
+출처 : https://backtony.github.io/spring/2021-08-13-spring-log-1/
 
 
 ### yml 파일
@@ -81,4 +104,7 @@ server:
   port: 9091
 
 ```
+
+
+
 
