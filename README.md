@@ -19,6 +19,24 @@ public class MemberRepository {
     @PersistenceContext
     private EntityManager em;
 ```
+#### @Embeddable
+
+Jpa의 내장타입이란 뜻입니다. Jpa에서 domain 생성시 경우에 따라 안에 들어가는 POJO객체
+
+```java
+@Embeddable//jpa의 내장타입이란 뜻
+@Getter @Setter
+public class Address {
+
+    private String city;
+    private String street;
+    private String zipcode;
+
+}
+
+
+```
+
 
 
 
