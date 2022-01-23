@@ -19,7 +19,7 @@ public class MemberRepository {
     @PersistenceContext
     private EntityManager em;
 ```
-#### @Embeddable
+#### @Embeddable (내장타입 대상 클래스의 상단) @Embedded (내장타입을 사용하는 객체의 변수 설정 위)
 
 Jpa의 내장타입이란 뜻입니다. Jpa에서 domain 생성시 경우에 따라 안에 들어가는 POJO객체
 
@@ -32,6 +32,25 @@ public class Address {
     private String street;
     private String zipcode;
 
+}
+
+
+
+
+@Entity
+@Getter @Setter
+public class Member {
+
+    @Id @GeneratedValue
+    @Column(name = "member_id")
+    private Long id;
+
+    private String name;
+
+    @Embedded//둘 중 하나만 있어도 됨
+    private Address address;
+
+    private List<Order> orders = new ArrayList<>();
 }
 
 
