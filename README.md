@@ -55,13 +55,129 @@ public class Member {
 
 ```
 
+#### @Inheritance(strategy = InheritanceType.SINGLE_TABLE) (strategy = InheritanceType.JOINED) (strategy = InheritanceType.TABLE_PER_CLASS)
+```java
+/*
+* /strategy  join이 제일 정교, single 다 때려박기, table_per_class 상속받는 테이블마다 전부 생성
+*/
+@Entity
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)/
+@Getter @Setter
+public abstract class Item {//상속관계 전략을 심어줘야한다. (여긴 Single Table)
+
+    @Id @GeneratedValue
+    @Column(name = "item_id")
+    private Long id;
+
+    private String name;
+    private int price;
+    private int stockQuantity;
+}
+```
+
+#### @OneToMany(mappedBy = "FK가 있는 다수에서 선언된 field명") 
+       @OneToMany(mappedBy = "car")
+(차(1) ArrayList<Tire> list - 타이어(*) Car car, Member(1) - Order(*) 1 대 다에서 종속을 의미")
+
+```java
+@Entity
+@Getter @Setter
+public class Member {
+
+    @Id @GeneratedValue
+    @Column(name = "member_id")
+    private Long id;
+
+    private String name;
+
+    @Embedded
+    private Address address;
+
+    @OneToMany(mappedBy = "member")//order Table에 있는 member 필드에 매핑된거야.
+    //내가 매핑을 하는애가 아니고 나는 매핑된 거울일 뿐이야. (읽기 전용)
+    private List<Order> orders = new ArrayList<>();
+}
+```
+
+#### @DiscriminatorColumn(name = "dtype") -> @DiscriminatorValue("M")
+      구현체와 상속받아 사용되는 Entity간의 구별
+```java
+      
+@Entity
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)//strategy =  제일 정교 single 다 때려박기
+@DiscriminatorColumn(name = "dtype")
+@Getter @Setter
+public abstract class Item {//상속관계 전략을 심어줘야한다. (여긴 Single Table)
+
+    @Id @GeneratedValue
+    @Column(name = "item_id")
+    private Long id;
+
+    private String name;
+    private int price;
+    private int stockQuantity;
+}
+
+      
+      
+      
+@Entity
+@Getter @Setter
+@DiscriminatorValue("M")
+public class Movie extends Item {
+
+    private String director;
+    private String actor;
+}
+
+```
+      
+####  @Enumerated(EnumType.STRING) (EnumType.ORDINAL) 
+      Enum Type에서 String 상태값으로 바로 들어가는 것. / 숫자로 연계되서 상태값으로 들어가는것 (1,2 이렇게) 가급적 사용 X(중간에 상태 하나 추가되면망함)
+      
+      ```java
+      @Entity
+@Getter @Setter
+public class Delevery {
+    @Enumerated(EnumType.STRING)
+    private DeliveryStatus status; //READY, COMP
+}
 
 
+```
+      
+#### @OneToOne
+      
+     1대1 매핑이라 더 자주 쓰이는 Table에 FK를 놓는다. (어디다 놔도 가능한데 가급적)
+     연관관계 주인을 FK에 가까이에 있는 자주쓰이는 Table을 주인으로 둔다.
+      
+      ```java
+      
+@Entity
+@Table(name = "orders")
+@Getter
+@Setter
+public class Order {
 
+    @OneToOne
+    @JoinColumn(name = "delivery_id")
+    private Delevery delevery;
+}//FK를 가지고 있는 주인. JoinColumn으로 delivery_id 연결해놓는다.
+      
+@Entity
+@Getter @Setter
+public class Delevery {
 
+    @OneToOne(mappedBy = "delevery")
+    private Order order;
 
+}//종속관계가 되어버린 Delivery는 mappedBy로 Order의 수정에 의해서만 수정되는 거울로 만들어놓는다.
 
-
+      
+      ```
+      
+      
+      
 
 ### Test코드
 
