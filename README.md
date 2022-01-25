@@ -132,10 +132,10 @@ public class Movie extends Item {
 
 ```
       
-####  @Enumerated(EnumType.STRING) (EnumType.ORDINAL) 
-      Enum Type에서 String 상태값으로 바로 들어가는 것. / 숫자로 연계되서 상태값으로 들어가는것 (1,2 이렇게) 가급적 사용 X(중간에 상태 하나 추가되면망함)
+#### @Enumerated(EnumType.STRING) (EnumType.ORDINAL) 
+```java
+ //Enum Type에서 String 상태값으로 바로 들어가는 것. / 숫자로 연계되서 상태값으로 들어가는것 (1,2 이렇게) 가급적 사용 X(중간에 상태 하나 추가되면망함)
       
-      ```java
       @Entity
 @Getter @Setter
 public class Delevery {
@@ -151,7 +151,7 @@ public class Delevery {
      1대1 매핑이라 더 자주 쓰이는 Table에 FK를 놓는다. (어디다 놔도 가능한데 가급적)
      연관관계 주인을 FK에 가까이에 있는 자주쓰이는 Table을 주인으로 둔다.
       
-      ```java
+```java
       
 @Entity
 @Table(name = "orders")
@@ -174,7 +174,7 @@ public class Delevery {
 }//종속관계가 되어버린 Delivery는 mappedBy로 Order의 수정에 의해서만 수정되는 거울로 만들어놓는다.
 
       
-      ```
+```
       
       
       
