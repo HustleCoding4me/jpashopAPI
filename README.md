@@ -285,6 +285,22 @@ server:
 
 ```
 
+### //==연관관계 메서드==//
+#### 각 종속관계가 있는 class끼리 자바에서도 활용하기 위해서 set 할 때 ,원자적으로 기능을 묶어서 더 편리하게 사용하는 것 (실수 방지차원도 있음)
+```java
+    public void setMember(Member member){
+       this.member = member;
+       member.getOrders().add(this);
+    }
 
-
+    /*
+    public static void main(String[] args){
+    Member member = new Member();
+    Order order = new Order();
+    
+    order.setMember(member);
+    //member.getOrders().add(order);의 코드를 실수로 빼먹을 수 있기 때문에 원자적으로 묶는 것
+    }
+     */
+```
 
