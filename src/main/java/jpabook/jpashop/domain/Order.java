@@ -19,14 +19,14 @@ public class Order {
     @Column(name = "order_id")
     private Long id;
 
-    @ManyToOne
+
     @JoinColumn(name = "member_id")//포린키
     private Member member;
 
     @OneToMany(mappedBy = "order") //order Item의 order와 mappedBy
     private List<OrderItem> orderItems = new ArrayList<>();
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "delivery_id")
     private Delevery delevery;
 

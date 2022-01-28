@@ -6,6 +6,8 @@ import org.aspectj.weaver.ast.Or;
 
 import javax.persistence.*;
 
+import static javax.persistence.FetchType.LAZY;
+
 @Entity
 @Getter @Setter
 public class Delevery {
@@ -14,7 +16,7 @@ public class Delevery {
     @Column(name = "delivery_id")
     private Long id;
 
-    @OneToOne(mappedBy = "delevery")
+    @OneToOne(mappedBy = "delevery", fetch = LAZY)
     private Order order;
 
     @Embedded
