@@ -224,7 +224,15 @@ public class MemberRepositoryTest {
     private Order order;  
       
 ```
-      
+    
+   
+> X to Many에서 원래는 persist(orderItemA),persist(orderItemB),persist(orderItemC), persist(order)
+> orderItems 위에 cascade = CascadeType.ALL 타입을 붙이면 persist(order)만 해도 orderItem들이 종속적으로 persist가 된다.
+  
+```java
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    private List<OrderItem> orderItems = new ArrayList<>();
+```
 
 ### logging
 
