@@ -205,6 +205,26 @@ public class MemberRepositoryTest {
     }
 ```
 
+> 필수! X to One 어노테이션들은 fetchType이 EAGER (자신 객체 불러올때 (XtoOne)으로 연관지어진 객체들 즉시 모두 가져오는것) 으로 설정되어있다.
+> 이론상 가져오는 상대방은 1개의 객체라 즉시 불러오는게 합리적인것 처럼 보이나, 실상 JPQL로 불러올 때, select문으로 가져오기 때문에, 100개의 Many 진영의 객체를 가져온다면
+> 각 1개를 가져올때마다 단문의 쿼리를 100번씩 수행할 수도 있다. (one쪽의 전체 select) 필수적으로 X to One으로 매칭된 애들은 fetchType을 LAZY로 수정해줘야한다.
+   
+> EX)
+```java
+      
+     @OneToOne(mappedBy = "delevery", fetch = FetchType.LAZY)
+    private Order order; 
+      
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "item_id")
+    private Item item;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id") //One의 참조키의 원래 column명
+    private Order order;  
+      
+```
+      
 
 ### logging
 
