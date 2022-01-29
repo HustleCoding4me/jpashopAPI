@@ -286,8 +286,12 @@ server:
 ```
 
 ### //==연관관계 메서드==//
-#### 각 종속관계가 있는 class끼리 자바에서도 활용하기 위해서 set 할 때 ,원자적으로 기능을 묶어서 더 편리하게 사용하는 것 (실수 방지차원도 있음)
+#### 양방향 관계에 있는 Entity끼리 자바에서도 활용하기 위해서 set 할 때 ,원자적으로 기능을 묶어서 더 편리하게 사용하는 것 (실수 방지차원도 있음)
 ```java
+    
+    @JoinColumn(name = "member_id")//포린키
+    private Member member;
+      
     public void setMember(Member member){
        this.member = member;
        member.getOrders().add(this);
@@ -302,5 +306,14 @@ server:
     //member.getOrders().add(order);의 코드를 실수로 빼먹을 수 있기 때문에 원자적으로 묶는 것
     }
      */
+  
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL) //order Item의 order와 mappedBy
+    private List<OrderItem> orderItems = new ArrayList<>();
+
+      
+      public void addOrderItem(OrderItem orderItem) {
+        orderItems.add(orderItem);
+        orderItem.setOrder(this);
+    }
 ```
 
