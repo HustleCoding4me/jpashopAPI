@@ -176,7 +176,78 @@ public class Delevery {
       
 ```
       
+#### @Transactional()
+>JPA의 Data 변경 모든 동작들은 @Transactional()안에서 이루어져야 LAZY 로딩 등의 동작들이 작동한다.
+>주로 Spring  로직이 많이 사용되었으니 javax의 Transactional보단 spring의 Transactional이 더 사용할 수 있는 도구 개수가 많다.
+```java
+   @Transactional
+public class MemberService {
+
+```
       
+> 읽기(select)에는 가급적이면 @Transaction(readOnly = true)를 넣어주면 좋다.      
+> 영속성 컨텍스트를 flush안하고 dirtyCheck을 안하고 db에 따라서는 읽기 전용 Transaction에 대한 이점이 있어서 리소스가 덜 사용 되기도 한다.
+> 메서드에 설정해줌      
+```java
+    @Transactional(readOnly = true)
+    public List<Member> findMembers() {
+        return memberRepository.findAll();
+    }
+
+```   
+      
+#### Autowired 대체 생성자 만들기
+> //field에 final 변수가 있는 애들의 생성자를 만들어준다.   
+```java
+//1.기본 Autowired
+@Service
+@Transactional
+public class MemberService {
+
+    @Autowired
+    private MemberRepository memberRepository;
+      
+      
+//2.Setter 만들고 그 위에 @Autowired
+    private MemberRepository memberRepository;
+    
+    @Autowired
+    public void setMemberRepository(MemberRepository memberRepository) {
+        this.memberRepository = memberRepository;
+    }
+//한번 MemberService가 생성되고 컴파일 시점에 setter가 실행되어서 레포지토리가 변경될 수 있기때문에 비추
+      
+      
+      
+//3.Constructor
+public class MemberService {
+
+
+private MemberRepository memberRepository;
+
+public MemberService(MemberRepository memberRepository) {
+  this.memberRepository = memberRepository;
+}
+//클래식한 좋은 방법이다. Spring 버전이 업그레이드되면서 생성자가 한개라면, 굳이 @Autowired 어노테이션을 붙이지 않아도 자동으로 주입해준다.
+      
+
+//4.Lombok 사용
+      
+      //4-1.@AllArgsConstructor
+      @AllArgsConstructor
+      public class MemberService {
+         private MemberRepository memberRepository;
+      }
+      //기본 생성자를 대신 만들어준다.
+      
+      //4-2.@RequiredArgsConstructor
+      @RequiredArgsConstructor
+      public class MemberService {
+          private final MemberRepository memberRepository;
+      }
+      //제일 best, final이 달린 아이들의 Constructor만 만들어준다.
+```
+> 변수에 final을 붙이면, Test시에 직접 객체를 주입해주지 않으면 오류가 나서 Test하기도 쉽다. 관리가 더 용이해짐.     
       
 
 ### Test코드
