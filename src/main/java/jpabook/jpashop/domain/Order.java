@@ -20,6 +20,7 @@ public class Order {
     private Long id;
 
 
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")//포린키
     private Member member;
 
