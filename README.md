@@ -195,7 +195,35 @@ public class MemberService {
     }
 
 ```   
+#### @XtoOne  fetchType EAGER to LAZY
+> 필수! X to One 어노테이션들은 fetchType이 EAGER (자신 객체 불러올때 (XtoOne)으로 연관지어진 객체들 즉시 모두 가져오는것) 으로 설정되어있다.
+> 이론상 가져오는 상대방은 1개의 객체라 즉시 불러오는게 합리적인것 처럼 보이나, 실상 JPQL로 불러올 때, select문으로 가져오기 때문에, 100개의 Many 진영의 객체를 가져온다면
+> 각 1개를 가져올때마다 단문의 쿼리를 100번씩 수행할 수도 있다. (one쪽의 전체 select) 필수적으로 X to One으로 매칭된 애들은 fetchType을 LAZY로 수정해줘야한다.
+   
+> EX)
+```java
       
+     @OneToOne(mappedBy = "delevery", fetch = FetchType.LAZY)
+    private Order order; 
+      
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "item_id")
+    private Item item;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id") //One의 참조키의 원래 column명
+    private Order order;  
+      
+```
+    
+   
+> X to Many에서 원래는 persist(orderItemA),persist(orderItemB),persist(orderItemC), persist(order)
+> orderItems 위에 cascade = CascadeType.ALL 타입을 붙이면 persist(order)만 해도 orderItem들이 종속적으로 persist가 된다.
+  
+```java
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    private List<OrderItem> orderItems = new ArrayList<>();
+```
 #### Autowired 대체 생성자 만들기
 > //field에 final 변수가 있는 애들의 생성자를 만들어준다.   
 ```java
@@ -276,35 +304,70 @@ public class MemberRepositoryTest {
     }
 ```
 
-> 필수! X to One 어노테이션들은 fetchType이 EAGER (자신 객체 불러올때 (XtoOne)으로 연관지어진 객체들 즉시 모두 가져오는것) 으로 설정되어있다.
-> 이론상 가져오는 상대방은 1개의 객체라 즉시 불러오는게 합리적인것 처럼 보이나, 실상 JPQL로 불러올 때, select문으로 가져오기 때문에, 100개의 Many 진영의 객체를 가져온다면
-> 각 1개를 가져올때마다 단문의 쿼리를 100번씩 수행할 수도 있다. (one쪽의 전체 select) 필수적으로 X to One으로 매칭된 애들은 fetchType을 LAZY로 수정해줘야한다.
-   
-> EX)
+#### Test에서 insert 등 쿼리가 날아가지 않는 경우
+> 방법 1. EntityManager를 Test 자바에서 @Autowired로 받아, flush 해준다.
+> 방법 2. @Transaction이 자동으로 Rollback해주는걸 해당 메서드 위에 @Rollback(value = false)를 올려 롤백 취소를 해본다.
 ```java
-      
-     @OneToOne(mappedBy = "delevery", fetch = FetchType.LAZY)
-    private Order order; 
-      
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "item_id")
-    private Item item;
+   @Test
+    public void 회원가입() throws Exception {
+        //given
+        Member member = new Member();
+        member.setName("kim");
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id") //One의 참조키의 원래 column명
-    private Order order;  
+        //when
+        Long savedId = memberService.join(member);
+
+        //then
+        entityManager.flush();
+        Assert.assertEquals(member, memberService.findOne(savedId));
+        /*
+        //@Transactional 같은 트랜잭션에서 같은 Entity , ID값이 같으면 같은 영속성 Context에서 똑같이
+        //관리가 되기 때문에 가능한 Test이다.
+        실행시키면 select문만 나오는데,
+        persist를 한다고 해서 DB에 Insert를 바로 하는 것이 아니다.
+        database 트렌잭션이 commit될 때, 한번에 query 실행한다.
+        @Transactional은 자동 rollback이므로, JPA 판단상 쿼리를 flush하지 않아
+        insert문 안나간다. (영속성 context에서만 관리됨)
+         */
+
+    }
+         */
       
 ```
-    
-   
-> X to Many에서 원래는 persist(orderItemA),persist(orderItemB),persist(orderItemC), persist(order)
-> orderItems 위에 cascade = CascadeType.ALL 타입을 붙이면 persist(order)만 해도 orderItem들이 종속적으로 persist가 된다.
-  
+
+#### 예외 발생 Test하기 (ex 중복 회원 가입)
+< 예상되는 Exception class를 @Test의 expected옵션으로 넣어준다. (try,catch 코드 대신 사용가능)
+< 그냥 오류없이 지나가버리고 성공이라 띄우는 것을 방지하기 위해 Assert의 fail 메서드를 사용해준다. 
+< (해당 지점까지 오면 안된다는 것을 의미함. 오면 Test실패)                                                             
 ```java
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
-    private List<OrderItem> orderItems = new ArrayList<>();
+      @Test(expected = IllegalStateException.class)
+    public void 중복_회원_예외() throws Exception {
+        //given
+        Member mem1 = new Member();
+        mem1.setName("kim");
+        Member mem2 = new Member();
+        mem2.setName("kim");
+        //when
+        memberService.join(mem1);
+        memberService.join(mem2);
+        /*try {
+            memberService.join(mem2);
+        }catch (IllegalStateException e){
+            return;
+        }*/
+        //then
+        Assert.fail("여기까지 오면 실패임, 위에서 예외가 터져서 빠져야한다.");
+        /*
+         *Assert
+         */
+    }
 ```
 
+     
+#### memory DB로 Test하기
+> test에 resources dir를 만들고 application.yml로 db나 포트 등 설정을 따로 생성해준다.
+> test에 있는 파일들은 최우선적으로 test 하위에 있는 application.yml을 먼저 찾는다.
+![image](https://user-images.githubusercontent.com/37995817/151693328-60ce3bd0-1f7e-40af-a032-d5f4f92e0398.png)
 ### logging
 
 -기본적으로 hibernate의 type을 trace로 설정해준다.
