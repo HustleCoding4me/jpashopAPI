@@ -22,7 +22,8 @@ public class Member {
     @Embedded
     private Address address;
 
-    @OneToMany(mappedBy = "member")//order Table에 있는 member 필드에 매핑된거야.
     //내가 매핑을 하는애가 아니고 나는 매핑된 거울일 뿐이야. (읽기 전용)
+    @OneToMany(mappedBy = "member")//order Table에 있는 member 필드에 매핑된거야.
     private List<Order> orders = new ArrayList<>();
+
 }

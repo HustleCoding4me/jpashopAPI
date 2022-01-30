@@ -21,6 +21,7 @@ public class OrderItem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id") //One의 참조키의 원래 column명
     private Order order;
+
     
     private int orderPrice; //주문가격
     

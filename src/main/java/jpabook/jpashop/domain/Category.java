@@ -1,6 +1,8 @@
 package jpabook.jpashop.domain;
 
 import jpabook.jpashop.domain.item.Item;
+import lombok.Getter;
+import lombok.Setter;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -9,6 +11,7 @@ import java.util.List;
 import static javax.persistence.FetchType.*;
 
 @Entity
+@Getter @Setter
 public class Category {
 
     @Id
@@ -31,4 +34,9 @@ public class Category {
 
     @OneToMany(mappedBy = "parent")
     private List<Category> child = new ArrayList<>();
+
+    public void addChildCategory(Category child) {
+        this.child.add(child);
+        child.setParent(this);
+    }
 }
