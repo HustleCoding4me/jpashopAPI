@@ -49,7 +49,7 @@ public class Member {
     @Embedded//둘 중 하나만 있어도 됨
     private Address address;
 
-    private List<Order> orders = new ArrayList<>();
+    private List<Order> orders = new ArrayList<>();//
 }
 
 
