@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:h2:tcp://localhost/~/jpashop
     username: sa
-    password:
+    password: 1234
     driver-class-name: org.h2.Driver
 
   jpa:
@@ -18,4 +18,4 @@ logging:
     org.hibernate.type: trace
 
 server:
-  port: 9094
+  port: 3001
