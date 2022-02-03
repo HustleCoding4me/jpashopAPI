@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)//strategy =  제일 정교 single 다 때려박기
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)//strategy =  제일 정교 single 다 때려박기
 @DiscriminatorColumn(name = "dtype")
 @Getter @Setter
 public abstract class Item {//상속관계 전략을 심어줘야한다. (여긴 Single Table)
@@ -44,5 +44,11 @@ public abstract class Item {//상속관계 전략을 심어줘야한다. (여긴
             throw new NotEnoughStockException("need more stock");
         }
         this.stockQuantity = restStock;
+    }
+
+    public void change(String name, int price, int stockQuantity) {
+        this.name = name;
+        this.price = price;
+        this.stockQuantity = stockQuantity;
     }
 }
