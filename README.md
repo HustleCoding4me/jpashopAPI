@@ -301,10 +301,70 @@ public class Order {
       
 // Order order = new Order(); 
 ```
-      
-      
-      
-      
+
+#### Controller와 Form 주고받기에 사용되는 @
+> @PathVariable, @ModelAttribute
+> ex(item 리스트 수정 btn -> item 수정 Form -> 수정 완료 -> 다시 itemList)
+```html
+ <tr th:each="item : ${items}">
+                <td th:text="${item.id}"></td>
+                <td th:text="${item.name}"></td>
+                <td th:text="${item.price}"></td>
+                <td th:text="${item.stockQuantity}"></td>
+                <td>
+                    <a href="#" th:href="@{/items/{id}/edit (id=${item.id})}" 
+                       <!-- th:href로 "@{/items/{id}/edit(id=${item.id})}" item의 id 값으로 get 요청 -->
+                       class="btn btn-primary" role="button">수정</a>
+                </td>
+            </tr>      
+```
+> 수정버튼 클릭시 localhost:3001/items/300/edit 요청
+```java
+   /**
+     * 상품 수정
+     */
+      //@PathVariable 이 달려있는 인자의 이름으로 URI 를 확인하여 값을 할당하고 있다.
+      //localhost:3001/items/300/edit 요청 시, updateItemForm의 itemId로 300 할당
+    @GetMapping("/items/{itemId}/edit")
+    public String updateItemForm(@PathVariable("itemId") Long itemId, Model model) {
+        Book item = (Book) itemService.findOne(itemId);
+
+        BookForm bookForm = new BookForm();
+        bookForm.setId(item.getId());
+        bookForm.setName(item.getName());
+        bookForm.setPrice(item.getPrice());
+        bookForm.setStockQuantity(item.getStockQuantity());
+        bookForm.setAuthor(item.getAuthor());
+        bookForm.setIsbn(item.getIsbn());
+        model.addAttribute("form", bookForm);
+        return "items/updateItemForm";
+    }      
+``` 
+> db에서 id에 해당하는 ITEM 가져와서 updateItemForm에 뿌려줌 (여전히 localhost:3001/items/300/edit)   
+
+```html
+<form th:object="${form}" method="post">
+        <!-- id -->
+        <input type="hidden" th:field="*{id}" />   
+<button type="submit" class="btn btn-primary">Submit</button>
+    </form>      
+```      
+> 그냥 해당 localhost:3001/items/300/edit 에 post 방식으로 재요청
+```java
+     /**
+     * 상품 수정 완료
+     */
+    @PostMapping("/items/{itemId}/edit")
+    public String updateItem(@ModelAttribute("form") BookForm form) {
+        Book book = Book.createBook(form.getName(), form.getPrice(), form.getStockQuantity(), form.getAuthor(), form.getIsbn());
+        book.setId(form.getId());
+        itemService.saveItem(book);
+        return "redirect:/items";
+    }      
+``` 
+> itemService에 saveItem에 기존 id가 있는지 없는지 check해서 없으면 merge, item리스트로 red   
+> @ModelAttribute("form") BookForm form 은, BookForm class의 변수들을localhost:3001/items/300/edit 에 post 방식으로 넘어온 request 변수들과
+> 자동 Binding 해줘서 채운 뒤, Controller에서 사용하게 하고, 이후 추가적으로 return 될 View 단에서도 "form.Id" 식의 이름으로 사용가능하게 한다.
 </details>      
 
 <details>
@@ -538,4 +598,184 @@ public class OrderService {
 ```
 
 > 트랜잭션 스크립트 패턴 : 엔티티에는 비즈니스 로직이 거의 없고, 서비스 계층에서 대부분의 비즈> > 니스 로직을 처리하는 것 (기존 패턴)
+
+
+#### 예외처리
+
+```java
+      
+      package jpabook.jpashop.exception;
+public class NotEnoughStockException extends RuntimeException {
+ public NotEnoughStockException() {
+ }
+ public NotEnoughStockException(String message) {
+ super(message);
+ }
+ public NotEnoughStockException(String message, Throwable cause) {
+ super(message, cause);
+ }
+ public NotEnoughStockException(Throwable cause) {
+ super(cause);
+ }
+}
+```
+      
+      
+#### //== JPA에서 기존 엔티티의 값을 수정하는 방법(부제 : 왜 em.merge() 사용을 지양해야하는가)
+
+> 준영속Entity의 경우 (준영속Entity는 em.find를 한 것이 아닌, DB에는 존재하지만 순간적으로 자바에서 객체로만 관리되어져 EntitnyManager 1차캐시에 등록X 객체   > Update할 경우 2가지 방법이 존재한다.
+> 1. 변경 감지를 수동으로 사용하는 법 (영속 Entitny로 등록해줘서 dirtyChecking으로 수정되게 하는 법)
+> 2. 직접 merge()를 사용하는 법이다.
+> 결과적으로 말하자면 merge 사용은 지양해야한다.      
+> 변경 감지는 따로 updateMethod를 파서 해당 id로 em.find를 시켜 영속성을 만들어 1차캐시에 저장하고, 이후 그 객체를 변경해주면 이후 tx 커밋시에 자동 등록된다.
+> merge도 이와 비슷한 맥락인데, 1차 캐시에서 찾다가 없으면 db에서 꺼내온다. 여기서 영속성이 생기고, 이후 찾아온 객체에 merge(parameter)로 받은 파라미터에서
+> 모조리 set 해주어 변경감지가 되게 만들어준다.
+> 그런데 문제는 param에 넘기는 객체에 특정 변수의 값이 없을 경우, null로 update한다. 따라서 merge에 보내는 변경을 원하는 param 객체에는 
+> 변경을 원하는 변수를 제외한 모든 기존 변수의 값이 setting 되어있는 상태여야 한다.
+> 위험하니까 그냥 스스로 변경감지를 만들도록 하자. 
+
+> 결론 : Update한답시고 어설프게 Controller에서 객체 new 하지말고, service에서 find해서 merge 대신 변경감지로 update치자.
+> 트랜잭션이 있는 서비스 계층에 식별자 (`id`)와 변경할 데이터를 명확하게 전달하자(파라미터 or dto)    
+> * 수동 set set 으로 하는게 좋다.      
+      
+```java
+ @Test
+    public void updateTest() throws Exception {
+        Book book = em.find(Book.class, 1L);
+        book.setName("asdfasd");
+
+        //변경감지 == dirty checking
+        //em.find시에 해당 book을 영속성 관리하고,
+        //book의 Name 변경을 감지해서 추후 flush()시에 변경해준다.
+
+        /**
+         * but, 준영속 엔티티인경우 문제가 된다.
+         * 실재로 DB에 갔다 와서, 영속성 컨텍스트가 더는 관리하지 않는 엔티티
+         *  DB에 한번 저장되어 식별자가 존재한다. 임의로 만들어낸 엔티티도 기존 식별자를 가지고
+         * 있으면 준영속 엔티티로 볼 수 있다.
+         *  ex Book book = new Book();
+         *  book.setId(form.getId(); 등으로 생성되면, DB엔 있지만 EntityManager가 모르는 아이
+         */
+
+        /**
+         * 이런 준영속 Entiy를 수정하는 2가지 방법
+         * 1.변경 감지를 사용하는 법
+         * @Transactional
+         *     public void updateItem(Long itemId, Book param) {
+         *         Item findItem = itemRepository.findOne(itemId);
+         *         findItem.setPrice(param.getPrice());
+         *         findItem.setName(param.getName());
+         *         findItem.setStockQuantity(param.getStockQuantity());
+         *
+         *     }
+         * 2. merge를 사용하는것(비추)
+         * Book book = new Book();
+         * book.setId(form.getId();
+         * em.merge(item);
+         *
+         * merge 동작 순서
+         * 1.merge(파라미터) 파라미터로 넘어온 준영속엔티티 식별자 값으로 1차 캐시에서 Entity를 조회한다
+         * 2.만약 1차 캐시에서 엔티티가 없으면 db에서 조회, 1차캐시에 저장
+         * 3. 조회한 영속 엔티티에 파라미터로 받은 값을 채워 넣는다. (여기서 변경된 값 set)
+         * 4. 영속 상태인 채워진 엔티티를 return 한다.
+         * 5. 결과적으로 영속상태의 수정된 Entity가 나중에 flush될 때 dirtyChecking이 된다.
+         *
+         * * why? 사용하지 말라고 하는 것인가?
+         *         위에 변경감지법과 똑같은 코드다.
+         *         결국 id로 찾아서 parameter로 merge에 넘긴 값으로
+         *         찾아온 것의 값을 다 바꿔치기한 뒤, 변경 감지 시키는 법이다.
+         *
+         *  기존 merge의 Param으로 넣은 것과, merge()가 return한 객체는 다른 객체다.
+         *  주의 !// 병합을 사용하면 모든 속성을 교체한다.
+         *  병합시 param으로 넘긴 값으로 모두 갈아치워서 update치기 때문에,
+         *  param으로 넘긴 객체에 값이 없으면 tx commit시에 null로도 교체가 된다.
+         *  안됨 안됨!!
+         *
+         * 결론 : Update한답시고 어설프게 Controller에서 객체 new 하지말고, service에서 find해서 merge 대신 변경감지로 update치자.
+         * 수동 set set 으로 하는게 좋다.
+        * /
+    }      
+      
+```      
+      
+   
+      
+      
+</details>
+      
+<details>
+
+<summary> <h1>Form에서 Validation Check </h1> </summary>
+
+#### Controller 단에서 처리
+> @Valid는 MemberForm객체에 선언된 각종 제약조건 ex)@NotNull 등을 체크해준다.
+> 이후 후미에 BindingResult 객체를 받으면 그 객체로 결과들을 담아주는데,
+> 오류가 있다면, 결과를 담아 다시 Form으로 넘겨 thymeleaf로 처리해서 Form에서 오류 자체 메세지를 출력할 수 있다.
+```java
+@Controller
+@RequiredArgsConstructor
+public class MemberController {
+      
+@PostMapping("/members/new")
+    public String create(@Valid MemberForm form, BindingResult result) {
+
+        if (result.hasErrors()) {
+            return "members/createMemberForm";
+        }
+        Address address = new Address(form.getCity(), form.getStreet(), form.getZipcode());
+
+        Member member = new Member();
+        member.setName(form.getName());
+        member.setAddress(address);
+
+        memberService.join(member);
+        return "redirect:/";
+    }    
+
+}
+      
+```
+```java
+@Getter @Setter
+public class MemberForm {
+
+    @NotEmpty(message = "회원 이름은 필수 입니다.") //@Valid가 처리해줄 조건 어노테이션
+    private String name;
+
+    private String city;
+    private String street;
+    private String zipcode;
+}
+      
+```
+```html
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<style>
+ .fieldError {
+ border-color: #bd2130;
+ }
+</style>
+<body>
+<div class="container">
+  <div th:replace="fragments/bodyHeader :: bodyHeader"/>
+  <form role="form" action="/members/new" th:object="${memberForm}"
+        method="post">
+    <div class="form-group">
+      <label th:for="name">이름</label>
+      <input type="text" th:field="*{name}" class="form-control"
+             placeholder="이름을 입력하세요"
+             th:class="${#fields.hasErrors('name')}? 'form-control <!-- 여기서 BindingResult를 가져와서 fields.hasErrors 식으로 처리 가능하다. -->
+fieldError' : 'form-control'">                                     <!-- 오류나면 border를 빨갛게 두르게 css style 적용해서 class 선언해줌 -->
+      <p th:if="${#fields.hasErrors('name')}"                      <!-- th:if 만약 name문의 @NotNull 조건이 @Valid에서 오류로 잡히면, BindingResult를 fields로 불러 오류가 있다고 -->
+         th:errors="*{name}">Incorrect date</p>                    <!-- 판단이 될 것이고, th:errors="*{name}"이 MemberForm에 미리 선언해둔 message를 담아 출력해준다. --> 
+    </div>                                                         <!-- @NotEmpty(message = "회원 이름은 필수 입니다.") -->
+</body>
+</html>      
+```
+      
+![image](https://user-images.githubusercontent.com/37995817/152294021-0d062093-f49d-4e01-85d5-2331640d915a.png)
+
+> 장점 : MemberForm 객체에 이미 도시나 적혀있는 우편번호들이 저장이 유지가 되어있기 때문에,   
+> 다시 Controller를 갔다 와서 name을 Validation했다고 해서 기존 유저가 적어놓은 내용은 그대로 > 유지가 된다.
 </details>
