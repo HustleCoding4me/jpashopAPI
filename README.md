@@ -71,6 +71,7 @@ server:
       
 <details>
 <summary> <h1>유의사항 </h1> </summary>
+      
 #### //== API 사용을 할 때 DTO를 만들어서 받는 이유==//
       
 > API 스펙에 맞춰서 @ResponseBody Entitny를 사용하는게 아니라 DTO를 하나 만들어서 해야한다.
@@ -106,6 +107,67 @@ server:
       
 ```
       
+#### //== API 제작시 DTO 생성시에 혹여 DTO 내부에 Entity가 있는지 check 해야한다.==//
+ 
+> Entity가 변하면 모두 엉망이 되어버림.
+      
+```java
+@Data
+    static class OrderDto {
+
+        private Long orderId;
+        private String name;
+        private LocalDateTime orderDate;
+        private OrderStatus orderStatus;
+        private Address address;
+        //OrderItem도 Entity기 때문에 바로 반환하면 안된다. OrderItem도 DTO로 모두 변환해야함!!!
+        private List<OrderItem> orderItems;
+
+        public OrderDto(Order order) {
+            this.orderId = order.getId();
+            this.name = order.getMember().getName();
+            this.orderDate = order.getOrderDateTime();
+            this.orderStatus = order.getStatus();
+            this.address = order.getDelivery().getAddress();
+            order.getOrderItems().stream().forEach(o -> o.getItem().getName());
+            this.orderItems = order.getOrderItems();
+        }
+    }   
+      
+```      
+      
+> Order 하위에 OrderItem Entitny를 Dto로 수정하는 경우
+
+```java
+  public OrderDto(Order order) {
+            this.orderId = order.getId();
+            this.name = order.getMember().getName();
+            this.orderDate = order.getOrderDateTime();
+            this.orderStatus = order.getStatus();
+            this.address = order.getDelivery().getAddress();
+            this.orderItems = order.getOrderItems().stream()
+                    .map(o -> new OrderItemDto(o))
+                    .collect(Collectors.toList());
+        }
+    }
+
+    @Data
+    static class OrderItemDto {
+        private String itemName;
+        private int orderPrice;
+        private int count;
+
+        public OrderItemDto(OrderItem orderItem) {
+            this.itemName = orderItem.getItem().getName();
+            this.orderPrice = orderItem.getOrderPrice();
+            this.count = orderItem.getCount();
+        }
+    }
+      
+```      
+> OrderItemDto에 선언하여 Return하고 싶은 값을 추릴 수 있다.      
+ ![image](https://user-images.githubusercontent.com/37995817/153432016-40f8316a-4839-46d6-912c-604540ffc34c.png)
+     
       
 </details>
       
