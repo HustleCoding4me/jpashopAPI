@@ -168,6 +168,40 @@ server:
 > OrderItemDto에 선언하여 Return하고 싶은 값을 추릴 수 있다.      
  ![image](https://user-images.githubusercontent.com/37995817/153432016-40f8316a-4839-46d6-912c-604540ffc34c.png)
      
+
+#### //==fetch join시에 XtoMany에서 List Collections들과 join시에 중복 데이터 삭제하는법 ==//
+
+> ex) Order를 불러올 때, orderItems도 join해서 부르면 orderItems의 개수만큼 중복 Order가 불려온다.
+      
+> Order에 연결된 orderItems 개수만큼 중복된 모습      
+ ![image](https://user-images.githubusercontent.com/37995817/153604400-2380f33c-e334-4930-a9c6-e3671e7fea57.png)
+
+> fetch join 나쁜 예     
+```java
+public List<Order> findAllWithItem(OrderSearch orderSearch) {
+        return em.createQuery("select o from Order o" +
+                " join fetch o.member m" +
+                " join fetch o.delivery d" +
+                " join fetch o.orderItems oi" +
+                " join fetch oi.item i", Order.class).getResultList();
+    }      
+```      
+> 여기서 JPA의 distinct를 적용하면, 동일한 id인 order 객체는 제거하여 준다. (4개 찾아올거 2개 찾아옴)
+
+> JPA에 distinct를 적용하여 order id당 한개씩만 가져온 모습
+![image](https://user-images.githubusercontent.com/37995817/153604556-2ca00bdd-386b-42aa-a652-b01044fb78d7.png)
+      
+> 기존 JPQL에 distinct만 추가해주었다. db의 distinct와 다른 점은 db값이 모두 동일하지 않아도, Order 객체의 id값이 동알히면 배제한다.
+```java
+    public List<Order> findAllWithItemDistinct(OrderSearch orderSearch) {
+        return em.createQuery("select distinct o from Order o" +
+                " join fetch o.member m" +
+                " join fetch o.delivery d" +
+                " join fetch o.orderItems oi" +
+                " join fetch oi.item i", Order.class).getResultList();
+    }      
+```   
+      
       
 </details>
       
