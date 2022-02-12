@@ -4,11 +4,13 @@ import jpabook.jpashop.domain.Category;
 import jpabook.jpashop.controller.exception.NotEnoughStockException;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@BatchSize(size = 1000)
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)//strategy =  제일 정교 single 다 때려박기
 @DiscriminatorColumn(name = "dtype")

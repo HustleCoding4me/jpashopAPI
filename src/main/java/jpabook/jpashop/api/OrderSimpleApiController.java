@@ -85,5 +85,6 @@ public class OrderSimpleApiController {
             this.orderStatus = order.getStatus();
             this.address = order.getDelivery().getAddress();
         }
+
     }
 }
