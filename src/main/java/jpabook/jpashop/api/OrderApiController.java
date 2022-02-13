@@ -6,6 +6,8 @@ import jpabook.jpashop.domain.OrderItem;
 import jpabook.jpashop.domain.OrderStatus;
 import jpabook.jpashop.repository.OrderRepository;
 import jpabook.jpashop.repository.OrderSearch;
+import jpabook.jpashop.repository.order.query.OrderFlatDto;
+import jpabook.jpashop.repository.order.query.OrderItemQueryDto;
 import jpabook.jpashop.repository.order.query.OrderQueryDto;
 import jpabook.jpashop.repository.order.query.OrderQueryRepository;
 import lombok.Data;
@@ -18,7 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.*;
 
 /**
  * X to Many (List등 컬렉션) 다루기
@@ -50,7 +56,7 @@ public class OrderApiController {
         List<Order> orders = orderRepository.findAll(new OrderSearch());
         return orders.stream()
                 .map(o -> new OrderDto(o))
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     //fetch join법 근데 쿼리에 distinct 적용함
@@ -59,15 +65,27 @@ public class OrderApiController {
     @GetMapping("/api/v3/ordersNotDistinct")
     public List<OrderDto> orderV3(){
         List<Order> all = orderRepository.findAllWithItem(new OrderSearch());
-        return all.stream().map(o -> new OrderDto(o)).collect(Collectors.toList());
+        return all.stream().map(o -> new OrderDto(o)).collect(toList());
     }
 
+    /**
+     * JQPL에서 직접 distinct 붙여서 orderItems까지 가져와 paging 가능하게 하는 법
+     * (겹치는 Order를 JPA 가 알아서 걸러줌)
+     */
     @GetMapping("/api/v3/ordersDistinct")
     public List<OrderDto> orderV3Dt(){
         List<Order> all = orderRepository.findAllWithItemDistinct(new OrderSearch());
-        return all.stream().map(o -> new OrderDto(o)).collect(Collectors.toList());
+        return all.stream().map(o -> new OrderDto(o)).collect(toList());
     }
 
+    /**
+     * @BatchSize나 hibernate.default_batch_fetch_size: 100~1000 설정하여서
+     * Order를 가져올 때, OrderItems 를 IN 쿼리로 집어서 가져오게 한다.
+     *
+     *     @BatchSize(size = 1000)
+     *     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL) //order Item의 order와 mappedBy
+     *     private List<OrderItem> orderItems = new ArrayList<>();
+     */
     @GetMapping("/api/v3.1/ordersCollectionPaging")
     public List<OrderDto> orderV3_CollectionPaging(
             @RequestParam(value = "offset", defaultValue = "0") int offset,
@@ -75,13 +93,39 @@ public class OrderApiController {
             {
         List<Order> orders = orderRepository.findAllWithMemberDeliveryWithPaging(offset,limit);
 
-        return orders.stream().map(o -> new OrderDto(o)).collect(Collectors.toList());
+        return orders.stream().map(o -> new OrderDto(o)).collect(toList());
     }
 
     @GetMapping("/api/v4/orders")
     public List<OrderQueryDto> ordersV4(){
         return orderQueryRepository.findOrderQueryDtos();
     }
+
+    @GetMapping("/api/v5/orders")
+    public List<OrderQueryDto> ordersV5(){
+        return orderQueryRepository.findAllByDto_optimization();
+    }
+
+    @GetMapping("/api/v6/orders")
+    public List<OrderQueryDto> ordersV6(){
+        List<OrderFlatDto> allFlats = orderQueryRepository.findAllByDto_flat();
+
+
+
+        List<OrderQueryDto> collect = allFlats.stream()
+                .collect(
+                        groupingBy(o -> new OrderQueryDto(o.getOrderId(), o.getName(), o.getOrderDate(), o.getOrderStatus(), o.getAddress()),
+                                mapping(o -> new OrderItemQueryDto(o.getOrderId(), o.getItemName(), o.getOrderPrice(), o.getCount()), toList()))
+                ).entrySet().stream()
+                .map(e -> new OrderQueryDto(e.getKey().getOrderId(),
+                        e.getKey().getName(), e.getKey().getOrderDate(), e.getKey().getOrderStatus(),
+                        e.getKey().getAddress(), e.getValue()))
+                .collect(toList());
+        return collect;
+    }
+
+
+
     @Data
     static class OrderDto {
 
@@ -101,7 +145,7 @@ public class OrderApiController {
             this.address = order.getDelivery().getAddress();
             this.orderItems = order.getOrderItems().stream()
                     .map(o -> new OrderItemDto(o))
-                    .collect(Collectors.toList());
+                    .collect(toList());
         }
     }
 
