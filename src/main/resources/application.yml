@@ -2,16 +2,18 @@ spring:
   datasource:
     url: jdbc:h2:tcp://localhost/~/jpashop
     username: sa
-    password:
+    password: 1234
     driver-class-name: org.h2.Driver
 
   jpa:
+    open-in-view: true
     hibernate:
       ddl-auto: create
     properties:
       hibernate:
         format_sql: true
         default_batch_fetch_size: 100
+
 
 logging:
   level:

@@ -1,7 +1,7 @@
 package jpabook.jpashop;
 
 import jpabook.jpashop.domain.Member;
-import jpabook.jpashop.repository.MemberRepository;
+import jpabook.jpashop.repository.MemberRepositoryOld;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberRepositoryTest {
 
     @Autowired
-    MemberRepository memberRepository;
+    MemberRepositoryOld memberRepository;
 
     @Test
     @Transactional//testCase에 있으면 rollback을 시킵니다.
