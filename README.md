@@ -22,6 +22,7 @@ public @interface RestController {
 #### @ResponseBody //json으로 온 Body를 Member에 그대로 Mapping
 
 ```java
+      
  @PostMapping("/api/v1/members")
     public CreateMemberResponse saveMemberV1(@RequestBody @Valid Member member) {
         //json으로 온 Body를 Member에 그대로 Mapping
