@@ -1,6 +1,6 @@
 # 배운점과 유의사항
 <details>
-
+.
 <summary> <h1>어노테이션 </h1> </summary>
       
 #### @RestController (//@Responsebody + @Controller 합친것)
